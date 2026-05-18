@@ -1,0 +1,32 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyd
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+sonic_forge/
+
+# Notebook checkpoints
+.ipynb_checkpoints/
+
+# PyTorch artifacts
+*.pt
+*.pth
+*.ckpt
+
+# Data artifacts
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+
+# OS files
+Thumbs.db
+.DS_Store
