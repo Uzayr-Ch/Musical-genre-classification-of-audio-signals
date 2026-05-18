@@ -1,5 +1,6 @@
-"""Model components for hybrid audio classification."""
+"""Package initializer for src.models.
 
-from .cnn import CNNExtractor
-from .hybrid_model import HybridAudioClassifier
-from .transformer import TransformerEncoder
+Intentionally left empty to avoid import-time side effects and
+prevent circular import errors. Import model classes directly from
+their modules (e.g. `from src.models.cnn import CNN_Extractor`).
+"""

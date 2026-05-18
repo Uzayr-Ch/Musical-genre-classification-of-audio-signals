@@ -3,35 +3,44 @@
 from __future__ import annotations
 
 import torch
-from torch import nn
+import torch.nn as nn
 
-from .cnn import CNNExtractor
-from .transformer import TransformerEncoder
+from src.models.cnn import CNN_Extractor
+from src.models.transformer import Transformer_Encoder
 
 
 class HybridAudioClassifier(nn.Module):
     """Combine CNN local feature extraction with Transformer context modeling."""
 
-    def __init__(self, num_classes: int, cnn_feature_dim: int = 256) -> None:
+    def __init__(self, num_genres: int, cnn_feature_dim: int = 256, transformer_heads: int = 8, transformer_layers: int = 4) -> None:
         super().__init__()
-        self.cnn = CNNExtractor(in_channels=1, feature_dim=cnn_feature_dim)
-        self.projection = nn.LazyLinear(cnn_feature_dim)
-        self.transformer = TransformerEncoder(embed_dim=cnn_feature_dim)
+        self.cnn = CNN_Extractor(in_channels=1, feature_dim=cnn_feature_dim)
+
+        # transformer expects input embed dim equal to cnn_feature_dim
+        self.transformer = Transformer_Encoder(
+            embed_dim=cnn_feature_dim,
+            num_heads=transformer_heads,
+            num_layers=transformer_layers,
+        )
+
         self.classifier = nn.Sequential(
             nn.LayerNorm(cnn_feature_dim),
-            nn.Linear(cnn_feature_dim, num_classes),
+            nn.Linear(cnn_feature_dim, num_genres),
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Run the hybrid model end to end.
+        """Forward pass:
 
-        Expected input shape: [batch, channels, mel_bins, time_frames]
+        Spectrogram -> CNN -> Transformer -> MeanPool -> Linear logits
+
+        Input: [B, 1, n_mels, T]
+        Output: [B, num_genres]
         """
-        features = self.cnn(x)
-        batch_size, channels, mel_bins, time_frames = features.shape
-        tokens = features.view(batch_size, channels, mel_bins * time_frames).transpose(1, 2)
-        tokens = self.projection(tokens)
-        encoded = self.transformer(tokens)
-        pooled = encoded.mean(dim=1)
+        tokens = self.cnn(x)  # [B, T', feature_dim]
+        encoded = self.transformer(tokens)  # [B, T', feature_dim]
+        pooled = encoded.mean(dim=1)  # mean over time -> [B, feature_dim]
         logits = self.classifier(pooled)
         return logits
+
+
+__all__ = ["HybridAudioClassifier"]
